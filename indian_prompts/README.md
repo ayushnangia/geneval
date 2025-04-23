@@ -15,7 +15,7 @@ The goal is to create a diverse evaluation suite that tests a model's ability to
 ## Dependencies
 
 The script requires Python 3 and the following libraries:
--   `PyYAML`: For parsing configuration/data (though primarily used for deduplication structure in the original script, the dependency remains).
+-   `PyYAML`: For parsing the configuration file (`config/config.yaml`).
 -   `NumPy`: For random sampling and numerical operations.
 
 You can install the dependencies using pip:
@@ -23,13 +23,22 @@ You can install the dependencies using pip:
 pip3 install pyyaml numpy
 ```
 
+## Configuration
+
+Most customization is now handled through the `config/config.yaml` file. This file defines:
+-   **File Paths:** Location of the `object_names.txt` file (relative to the script directory) and the default output path.
+-   **Generation Parameters:** Default random seed, default number of prompts per category, probability of adding a setting, maximum count for counting prompts.
+-   **Core Lists:** The lists used for generating prompts, including `colors`, `positions`, `indian_settings`, `indian_food`, `indian_clothing`, `indian_activities`, `indian_cultural_objects`, and `non_colorable_objects`.
+
+**To customize the generation, modify the values within `config/config.yaml`.**
+
 ## Input File
 
-The script requires an `object_names.txt` file to be present in the **same directory** where the script is run. This file should contain a list of object class names, one per line. The script uses this list as the vocabulary for generating prompts. An example file with a mix of general and Indian-specific objects is included in this directory.
+The script still requires an `object_names.txt` file. The path to this file is now specified in `config/config.yaml` under `files.object_names_file`. By default, it expects the file to be in the same directory as the script. This file should contain a list of object class names, one per line. An example file is included.
 
 ## Usage
 
-Run the script from your terminal using `python3`:
+Run the script from your terminal using `python3` from the `indian_prompts` directory:
 
 ```bash
 python3 create_prompts.py [OPTIONS]
@@ -37,15 +46,20 @@ python3 create_prompts.py [OPTIONS]
 
 **Available Options:**
 
--   `--seed SEED`: (Optional) An integer seed for the random number generator to ensure reproducible results. Defaults to `43`.
--   `--num-prompts N`, `-n N`: (Optional) The approximate number of prompts to generate *per category* (both standard and Indian-specific). Defaults to `100`. Note that the total number of unique prompts generated may vary due to deduplication and the inclusion of single-object prompts for every item in `object_names.txt`.
--   `--output-path PATH`, `-o PATH`: (Optional) The directory where the output files will be saved. Defaults to the current directory (`.`).
+Command-line options override the defaults specified in `config/config.yaml`:
+
+-   `--seed SEED`: An integer seed for the random number generator. (Default: loaded from `config.yaml`)
+-   `--num-prompts N`, `-n N`: The approximate number of prompts to generate *per category*. (Default: loaded from `config.yaml`)
+-   `--output-path PATH`, `-o PATH`: The directory where the output files will be saved. (Default: loaded from `config.yaml`)
 
 **Example:**
 
 ```bash
-# Generate prompts with seed 123, aiming for ~50 per category, output to current dir
-python3 create_prompts.py --seed 123 -n 50
+# Generate prompts using config defaults, output to current dir (default)
+python3 create_prompts.py
+
+# Override seed and number of prompts, output to a specific folder
+python3 create_prompts.py --seed 123 -n 50 -o ./generated_prompts
 ```
 
 ## Output Files
@@ -65,10 +79,8 @@ The script generates two files in the specified output path:
     -   `cultural_item`: (For `indian_cultural` tag) The specific cultural object.
     -   Other keys like `color`, `position` depending on the prompt type.
 
-## Customization
+## Further Customization
 
-You can customize the generated prompts by:
--   Editing the `indian_prompts/object_names.txt` file to add, remove, or modify object names.
--   Modifying the Python lists within `create_prompts.py` (e.g., `indian_settings`, `indian_food`, `indian_clothing`, `indian_activities`, `indian_cultural_objects`, `colors`, `positions`) to change the available options.
--   Adjusting the logic within the generation functions (e.g., changing the probability of adding a setting, modifying prompt templates).
--   Adding new generation functions for other types of prompts. 
+Beyond editing `config/config.yaml` and `object_names.txt`, you can further customize by:
+-   Modifying the Python logic within the generation functions in `create_prompts.py` (e.g., changing prompt templates).
+-   Adding new generation functions for other types of prompts and integrating them into the `generate_suite` function. 

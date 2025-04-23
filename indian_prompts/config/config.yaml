@@ -1,0 +1,176 @@
+# Configuration for Indianized Prompt Generation
+
+# Input/Output Files
+# object_names_file: Relative path to the object names list from the script's directory
+# output_path_default: Default directory for output files (can be overridden by --output-path)
+files:
+  object_names_file: "object_names.txt"
+  output_path_default: "."
+
+# Generation Parameters
+# setting_probability: Chance (0.0 to 1.0) of adding a random Indian setting to a prompt
+# counting_max_count: Maximum number for the 'counting' prompts (e.g., "four dogs")
+# default_seed: Default random seed if not provided via --seed
+# default_num_prompts_per_category: Default number per category if not provided via -n
+parameters:
+  setting_probability: 0.2
+  counting_max_count: 4
+  default_seed: 43
+  default_num_prompts_per_category: 100
+
+# Core Lists for Prompt Generation
+lists:
+  # Base object names are still loaded from the file specified in files.object_names_file
+  # However, this list defines objects typically not described by simple colors
+  non_colorable_objects:
+    - autorickshaw
+    - cycle rickshaw
+    - bajaj scooter
+    - ambassador car
+    - tata truck
+    - mandir
+    - gurdwara
+    - mosque
+    - dhaba
+    - paan shop
+    - roadside tea stall
+    - hand pump
+    - weaving loom
+    - neem tree
+    - banyan tree
+    - langur monkey
+    - peacock
+    - harmonium
+    - tabla
+    - sitar
+    - biryani
+    - dosa
+    - idli
+    - chai
+    - lassi
+    - pani puri
+    - chapati
+    - naan
+    - paratha
+    - vada pav
+    - pav bhaji
+    - traffic light
+    - fire hydrant
+    - stop sign
+    - parking meter
+    - computer keyboard
+    - tv remote
+    - microwave
+    - oven
+    - toaster
+    - refrigerator
+
+  colors:
+    - red
+    - orange
+    - yellow
+    - green
+    - blue
+    - purple
+    - pink
+    - brown
+    - black
+    - white
+    - gold
+    - silver
+    - bright
+
+  positions:
+    - left of
+    - right of
+    - above
+    - below
+    - next to
+    - behind
+    - in front of
+    - near
+
+  # Indian Context Lists
+  indian_settings:
+    - on a busy street in Delhi
+    - in a quiet village in Kerala
+    - at a crowded Mumbai railway station
+    - during a monsoon downpour
+    - in a Himalayan valley
+    - on a Ganges river ghat
+    - inside a Haveli
+    - at a bustling market
+    - during a wedding procession
+    - at a Diwali celebration
+    - during Holi festival
+    - near a chai stall
+    - in a paddy field
+    - outside a colourful Rajasthan fort
+
+  indian_food:
+    - samosa
+    - jalebi
+    - biryani
+    - dosa
+    - idli
+    - chai
+    - lassi
+    - pani puri
+    - chapati
+    - naan
+    - paratha
+    - vada pav
+    - pav bhaji
+    - gulab jamun
+
+  indian_clothing:
+    # Add a space prefix if needed for article use (e.g., " a Nehru jacket")
+    - sari
+    - kurta
+    - dhoti
+    - lehenga
+    - sherwani
+    - salwar kameez
+    - turban
+    - " Nehru jacket"
+
+  indian_activities:
+    # Add a space prefix if needed for article use (e.g., " haggling at a market")
+    - selling flowers
+    - drinking chai
+    - cooking roti
+    - playing cricket
+    - riding an autorickshaw
+    - carrying water pots
+    - offering prayers at a temple
+    - weaving a carpet
+    - " haggling at a market"
+    - " celebrating Holi"
+
+  indian_cultural_objects:
+    - diya
+    - rangoli
+    - puja thali
+    - kalash
+    - incense stick
+    - steel tiffin box
+    - earthen pot
+    - charpai
+    - mandir
+    - gurdwara
+    - mosque
+    - dhaba
+    - paan shop
+    - roadside tea stall
+    - hand pump
+    - weaving loom
+    - neem tree
+    - banyan tree
+    - marigold flower garland
+    - lotus flower
+    - langur monkey
+    - peacock
+    - cricket bat
+    - harmonium
+    - tabla
+    - sitar

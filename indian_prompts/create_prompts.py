@@ -10,60 +10,54 @@ import yaml
 
 import numpy as np
 
-# Load classnames
-# Assumes object_names.txt is in the same directory as this script
+# --- Configuration Loading ---
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
+
 try:
-    with open("object_names.txt") as cls_file:
-        classnames = [line.strip() for line in cls_file if line.strip()]
+    with open(CONFIG_FILE, 'r') as f:
+        config = yaml.safe_load(f)
 except FileNotFoundError:
-    print("Error: object_names.txt not found in the current directory.")
+    print(f"Error: Configuration file not found at {CONFIG_FILE}")
+    exit(1)
+except yaml.YAMLError as e:
+    print(f"Error parsing configuration file {CONFIG_FILE}: {e}")
     exit(1)
 
-# Indian context lists
-indian_settings = [
-    "on a busy street in Delhi", "in a quiet village in Kerala",
-    "at a crowded Mumbai railway station", "during a monsoon downpour",
-    "in a Himalayan valley", "on a Ganges river ghat", "inside a Haveli",
-    "at a bustling market", "during a wedding procession", "at a Diwali celebration",
-    "during Holi festival", "near a chai stall", "in a paddy field",
-    "outside a colourful Rajasthan fort"
-]
+# Extract config values
+lists_config = config.get('lists', {})
+params_config = config.get('parameters', {})
+files_config = config.get('files', {})
 
-indian_food = [
-    "samosa", "jalebi", "biryani", "dosa", "idli", "chai", "lassi", "pani puri",
-    "chapati", "naan", "paratha", "vada pav", "pav bhaji", "gulab jamun"
-]
+# --- Load classnames ---
+# Use path relative to the script's directory specified in config
+object_names_file = os.path.join(os.path.dirname(__file__), files_config.get('object_names_file', 'object_names.txt'))
+try:
+    with open(object_names_file) as cls_file:
+        classnames = [line.strip() for line in cls_file if line.strip()]
+except FileNotFoundError:
+    print(f"Error: Object names file not found at {object_names_file}")
+    exit(1)
 
-indian_clothing = [
-    "sari", "kurta", "dhoti", "lehenga", "sherwani", "salwar kameez", "turban",
-    " Nehru jacket" # Added space for article use
-]
+# --- Get lists from config ---
+indian_settings = lists_config.get('indian_settings', [])
+indian_food = lists_config.get('indian_food', [])
+indian_clothing = lists_config.get('indian_clothing', [])
+indian_activities = lists_config.get('indian_activities', [])
+indian_cultural_objects = lists_config.get('indian_cultural_objects', [])
+non_colorable_objects = lists_config.get('non_colorable_objects', [])
+colors = lists_config.get('colors', [])
+positions = lists_config.get('positions', [])
 
-indian_activities = [
-    "selling flowers", "drinking chai", "cooking roti", "playing cricket",
-    "riding an autorickshaw", "carrying water pots", "offering prayers at a temple",
-    "weaving a carpet", " haggling at a market", " celebrating Holi" # Added space for article use
-]
 
-indian_cultural_objects = [
-    "diya", "rangoli", "puja thali", "kalash", "incense stick",
-    "steel tiffin box", "earthen pot", "charpai", "mandir", "gurdwara",
-    "mosque", "dhaba", "paan shop", "roadside tea stall", "hand pump",
-    "weaving loom", "neem tree", "banyan tree", "marigold flower garland",
-    "lotus flower", "langur monkey", "peacock", "cricket bat", "harmonium",
-    "tabla", "sitar"
-]
+# --- Get parameters from config ---
+setting_probability = params_config.get('setting_probability', 0.2)
+counting_max_count = params_config.get('counting_max_count', 4)
+default_seed = params_config.get('default_seed', 43)
+default_num_prompts = params_config.get('default_num_prompts_per_category', 100)
+default_output_path = files_config.get('output_path_default', '.')
 
-# Objects typically not described by simple colors (e.g., "a red biryani")
-non_colorable_objects = [
-    "autorickshaw", "cycle rickshaw", "bajaj scooter", "ambassador car", "tata truck",
-    "mandir", "gurdwara", "mosque", "dhaba", "paan shop", "roadside tea stall",
-    "hand pump", "weaving loom", "neem tree", "banyan tree", "langur monkey", "peacock",
-    "harmonium", "tabla", "sitar", "biryani", "dosa", "idli", "chai", "lassi",
-    "pani puri", "chapati", "naan", "paratha", "vada pav", "pav bhaji", "traffic light",
-    "fire hydrant", "stop sign", "parking meter", "computer keyboard", "tv remote",
-    "microwave", "oven", "toaster", "refrigerator"
-]
+
+# --- Derived Lists (Calculated after loading config and classnames) ---
 colorable_idxs = [i for i, name in enumerate(classnames) if name not in non_colorable_objects]
 colorable_classnames = [classnames[i] for i in colorable_idxs]
 
@@ -100,7 +94,8 @@ def generate_single_object_sample(rng: np.random.Generator, size: int = None):
     idxs = rng.choice(len(classnames), size=size, replace=False)
     samples = []
     for idx in idxs:
-        setting = rng.choice(indian_settings) if rng.random() < 0.2 else None
+        # Use setting_probability from config
+        setting = rng.choice(indian_settings) if rng.random() < setting_probability else None
         prompt = f"a photo of {with_article(classnames[idx])}"
         if setting:
             prompt += f" {setting}"
@@ -120,7 +115,8 @@ def generate_single_object_sample(rng: np.random.Generator, size: int = None):
 def generate_two_object_sample(rng: np.random.Generator):
     TAG = "two_object"
     idx_a, idx_b = rng.choice(len(classnames), size=2, replace=False)
-    setting = rng.choice(indian_settings) if rng.random() < 0.2 else None
+    # Use setting_probability from config
+    setting = rng.choice(indian_settings) if rng.random() < setting_probability else None
     prompt = f"a photo of {with_article(classnames[idx_a])} and {with_article(classnames[idx_b])}"
     if setting:
         prompt += f" {setting}"
@@ -137,11 +133,23 @@ def generate_two_object_sample(rng: np.random.Generator):
         sample["setting"] = setting
     return sample
 
-numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
-def generate_counting_sample(rng: np.random.Generator, max_count=4):
+numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"] # Can also move to config if needed
+def generate_counting_sample(rng: np.random.Generator, max_count=None): # Use config default
     TAG = "counting"
+    # Use counting_max_count from config, allow override
+    current_max_count = max_count if max_count is not None else counting_max_count
+    if current_max_count >= len(numbers):
+        print(f"Warning: counting_max_count ({current_max_count}) exceeds available number words ({len(numbers)}). Adjusting.")
+        current_max_count = len(numbers) - 1
+
     idx = rng.choice(len(classnames))
-    num = int(rng.integers(2, max_count + 1)) # Inclusive endpoint
+    num = int(rng.integers(2, current_max_count + 1)) # Inclusive endpoint
+
+    # Ensure number word exists
+    if num >= len(numbers):
+         print(f"Error: Number {num} is too large for the 'numbers' list. Skipping sample.")
+         return None # Or handle appropriately
+
     return dict(
         tag=TAG,
         include=[
@@ -153,11 +161,11 @@ def generate_counting_sample(rng: np.random.Generator, max_count=4):
         prompt=f"a photo of {numbers[num]} {make_plural(classnames[idx])}"
     )
 
-colors = ["red", "orange", "yellow", "green", "blue", "purple", "pink", "brown", "black", "white", "gold", "silver", "bright"]
+# Colors list is loaded from config
 def generate_color_sample(rng: np.random.Generator):
     TAG = "colors"
     if not colorable_classnames:
-        print("Warning: No colorable classnames found. Skipping color sample.")
+        print("Warning: No colorable classnames found based on config and object list. Skipping color sample.")
         return None # Or handle appropriately
     idx = rng.choice(colorable_idxs) # Choose from filtered indices
     # Ensure person is not the only colorable item or handle if needed
@@ -167,7 +175,7 @@ def generate_color_sample(rng: np.random.Generator):
          if classnames[new_idx] != "person":
              idx = new_idx
 
-    color = rng.choice(colors)
+    color = rng.choice(colors) # Use colors list from config
     return dict(
         tag=TAG,
         include=[
@@ -177,11 +185,11 @@ def generate_color_sample(rng: np.random.Generator):
     )
 
 
-positions = ["left of", "right of", "above", "below", "next to", "behind", "in front of", "near"]
+# Positions list is loaded from config
 def generate_position_sample(rng: np.random.Generator):
     TAG = "position"
     idx_a, idx_b = rng.choice(len(classnames), size=2, replace=False)
-    position = rng.choice(positions)
+    position = rng.choice(positions) # Use positions list from config
     return dict(
         tag=TAG,
         include=[
@@ -195,12 +203,12 @@ def generate_position_sample(rng: np.random.Generator):
 def generate_color_attribution_sample(rng: np.random.Generator):
     TAG = "color_attr"
     if len(colorable_idxs) < 2:
-         print("Warning: Not enough colorable classnames for color attribution. Skipping.")
+         print("Warning: Not enough colorable classnames for color attribution based on config/objects. Skipping.")
          return None
     idxs = rng.choice(colorable_idxs, size=2, replace=False)
     idx_a, idx_b = idxs[0], idxs[1]
 
-    cidx_a, cidx_b = rng.choice(len(colors), size=2, replace=False)
+    cidx_a, cidx_b = rng.choice(len(colors), size=2, replace=False) # Use colors from config
     return dict(
         tag=TAG,
         include=[
@@ -212,9 +220,11 @@ def generate_color_attribution_sample(rng: np.random.Generator):
 
 
 # --- New Indian-Specific Generation Functions ---
+# Use corresponding lists from config
 
 def generate_indian_food_prompt(rng: np.random.Generator):
     TAG = "indian_food"
+    if not indian_food: return None # Handle empty list
     food_item = rng.choice(indian_food)
     return dict(
         tag=TAG,
@@ -225,6 +235,7 @@ def generate_indian_food_prompt(rng: np.random.Generator):
 
 def generate_indian_clothing_prompt(rng: np.random.Generator):
     TAG = "indian_clothing"
+    if not indian_clothing: return None
     clothing_item = rng.choice(indian_clothing)
     return dict(
         tag=TAG,
@@ -235,6 +246,7 @@ def generate_indian_clothing_prompt(rng: np.random.Generator):
 
 def generate_indian_activity_prompt(rng: np.random.Generator):
     TAG = "indian_activity"
+    if not indian_activities: return None
     activity = rng.choice(indian_activities)
     # Determine if article is needed (simple check for starting verb)
     prompt_activity = activity.strip()
@@ -252,6 +264,7 @@ def generate_indian_activity_prompt(rng: np.random.Generator):
 
 def generate_indian_cultural_prompt(rng: np.random.Generator):
     TAG = "indian_cultural"
+    if not indian_cultural_objects: return None
     cultural_item = rng.choice(indian_cultural_objects)
     return dict(
         tag=TAG,
@@ -263,7 +276,7 @@ def generate_indian_cultural_prompt(rng: np.random.Generator):
 
 # --- Modified Generation Suite ---
 
-def generate_suite(rng: np.random.Generator, n: int = 100, output_path: str = "."):
+def generate_suite(rng: np.random.Generator, n: int, output_path: str): # n and output_path passed from main
     samples = []
     num_base_classes = len(classnames) # Total number including Indian items
     num_each_std_type = n // 2 # Generate fewer standard types to make room for Indian ones
@@ -285,9 +298,10 @@ def generate_suite(rng: np.random.Generator, n: int = 100, output_path: str = ".
     # Generate counting samples
     temp_samples = []
     for _ in range(num_each_std_type):
-        temp_samples.append(generate_counting_sample(rng, max_count=4))
+        sample = generate_counting_sample(rng) # max_count comes from config by default
+        if sample: temp_samples.append(sample) # Check if sample was generated
     samples.extend(temp_samples)
-    print(f"  Added {len(temp_samples)} counting samples.")
+    print(f"  Added {len(temp_samples)} counting samples (max count: {counting_max_count}).")
 
     # Generate color samples
     temp_samples = []
@@ -315,28 +329,32 @@ def generate_suite(rng: np.random.Generator, n: int = 100, output_path: str = ".
     # Generate Indian food samples
     temp_samples = []
     for _ in range(num_each_indian_type):
-        temp_samples.append(generate_indian_food_prompt(rng))
+        sample = generate_indian_food_prompt(rng)
+        if sample: temp_samples.append(sample)
     samples.extend(temp_samples)
     print(f"  Added {len(temp_samples)} Indian food samples.")
 
     # Generate Indian clothing samples
     temp_samples = []
     for _ in range(num_each_indian_type):
-        temp_samples.append(generate_indian_clothing_prompt(rng))
+         sample = generate_indian_clothing_prompt(rng)
+         if sample: temp_samples.append(sample)
     samples.extend(temp_samples)
     print(f"  Added {len(temp_samples)} Indian clothing samples.")
 
     # Generate Indian activity samples
     temp_samples = []
     for _ in range(num_each_indian_type):
-        temp_samples.append(generate_indian_activity_prompt(rng))
+        sample = generate_indian_activity_prompt(rng)
+        if sample: temp_samples.append(sample)
     samples.extend(temp_samples)
     print(f"  Added {len(temp_samples)} Indian activity samples.")
 
      # Generate Indian cultural object samples
     temp_samples = []
     for _ in range(num_each_indian_type):
-        temp_samples.append(generate_indian_cultural_prompt(rng))
+        sample = generate_indian_cultural_prompt(rng)
+        if sample: temp_samples.append(sample)
     samples.extend(temp_samples)
     print(f"  Added {len(temp_samples)} Indian cultural object samples.")
 
@@ -377,14 +395,19 @@ def generate_suite(rng: np.random.Generator, n: int = 100, output_path: str = ".
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate Indianized prompts for evaluation.")
-    parser.add_argument("--seed", type=int, default=43, help="Generation seed (default: 43)")
-    parser.add_argument("--num-prompts", "-n", type=int, default=100, help="Approx number of prompts per task category (default: 100)")
-    parser.add_argument("--output-path", "-o", type=str, default=".", help="Output folder for prompts and metadata (default: '.')")
+    parser = argparse.ArgumentParser(description="Generate Indianized prompts for evaluation using config/config.yaml.")
+    # Use defaults from loaded config
+    parser.add_argument("--seed", type=int, default=default_seed,
+                        help=f"Generation seed (default: {default_seed} from config)")
+    parser.add_argument("--num-prompts", "-n", type=int, default=default_num_prompts,
+                        help=f"Approx number of prompts per task category (default: {default_num_prompts} from config)")
+    parser.add_argument("--output-path", "-o", type=str, default=default_output_path,
+                        help=f"Output folder for prompts and metadata (default: '{default_output_path}' from config)")
     args = parser.parse_args()
 
     # Use random seed for Python's random module as well
     random.seed(args.seed)
     rng = np.random.default_rng(args.seed)
 
+    # Pass n and output_path explicitly
     generate_suite(rng, args.num_prompts, args.output_path) 
